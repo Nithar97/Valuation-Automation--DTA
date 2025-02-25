@@ -11,7 +11,7 @@ st.set_page_config(page_title="VALUATION AUTOMATION", layout="wide")
 
 
 # Display the logo
-st.image("./image/hnblogo.jpg", width=50, use_column_width="auto")
+st.image("IMAGE/hnblogo.jpg", width=50, use_column_width="auto")
 
 # Display the logo at the right corner
 
