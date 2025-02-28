@@ -13,7 +13,7 @@ st.set_page_config(page_title="VALUATION AUTOMATION", layout="wide")
 # Display the logo
 st.image("./image/hnblogo.jpg", width=50, use_column_width="auto")
 
-# Display the logo at the right corner
+
 
 
 # Apply custom CSS for styling
@@ -55,7 +55,7 @@ local_css()
 st.markdown("<h1 class='title'>MP File - MRP/Micro/Tackafull</h1></BR>", unsafe_allow_html=True)
 
 # Load and Display Image 
-image_path = "IMAGE/Image1.webp"  # Adjust the image filename as necessary
+image_path = "IMAGE/Image1.webp"  
 if os.path.exists(image_path):
     image = Image.open(image_path)
     st.image(image, use_column_width=True)
@@ -172,7 +172,7 @@ if uploaded_file:
                 ignored_policies.to_excel(buffer, index=False)
                 buffer.seek(0)
                 st.download_button(
-                    label="Download Ignored Policies",
+                    label="Download Ignored Policies by Commencement Date",
                     data=buffer,
                     file_name="ignored_policies.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -304,7 +304,7 @@ if uploaded_file:
                                 return "C_11MICRO"
                             elif str(plan_code).startswith("PLAN25"):
                                 return "C_25MRPTAKAFUL"
-                            return "Check"
+                            return "Error"
                         
                         output_data['PROPHET_CODE'] = df['Plan Code'].apply(get_prophet_code)
                         
@@ -324,18 +324,38 @@ if uploaded_file:
                                 return 11
                             elif str(plan_code).startswith("PLAN25"):
                                 return 25
-                            return None
+                            return "Error"
                         
                         output_data['PLAN_NO'] = df['Plan Code'].apply(get_plan_no)
                         
                         # 5. COMM_DAT (Formatted as 8-digit YYYYMMDD as Integer from Policy Start Date)
+                        # def convert_date_to_8_digits(date):
+                        #     try:
+                        #         date_obj = pd.to_datetime(date, errors='coerce')
+                        #         return int(f"{date_obj.year:04d}{date_obj.month:02d}{date_obj.day:02d}")
+                        #     except:
+                        #         return 0
+                            
+                        # output_data['COMM_DAT'] = df['Policy Start Date'].apply(convert_date_to_8_digits)
+
+
+                        # 5. COMM_DAT (Formatted as 8-digit YYYYMMDD as Integer from Policy Start Date)
                         def convert_date_to_8_digits(date):
+                            if pd.isna(date) or str(date).strip() == "" or str(date).strip() == "0":  # Check for None, NaN, empty string, or "0"
+                                return "Error"
+                            
                             try:
-                                date_obj = pd.to_datetime(date, errors='coerce')
-                                return int(f"{date_obj.year:04d}{date_obj.month:02d}{date_obj.day:02d}")
+                                date_obj = pd.to_datetime(date, errors='coerce')  # Convert to datetime
+                                if pd.isna(date_obj):  # If conversion fails, return "Error"
+                                    return "Error"
+                                
+                                return int(f"{date_obj.year:04d}{date_obj.month:02d}{date_obj.day:02d}")  # Format as YYYYMMDD integer
                             except:
-                                return 0
+                                return "Error"  # Catch any unexpected errors and return "Error"
+
+                        # Apply the function to the column
                         output_data['COMM_DAT'] = df['Policy Start Date'].apply(convert_date_to_8_digits)
+
                         
                         # 6. NEXT_DUE_DATE (Static Value)
                         output_data['NEXT_DUE_DATE'] = 0
@@ -344,25 +364,68 @@ if uploaded_file:
                         output_data['BIRTH_DAT'] = df['DOB (Life 1)'].apply(convert_date_to_8_digits)
                         
                         # 8. SEX (Mapped from Gender (Life 1))
+                        # def map_gender(gender):
+                        #     gender = str(gender).strip().lower()
+                        #     if gender in ["male", "m"]:
+                        #         return 0
+                        #     elif gender in ["female", "f"]:
+                        #         return 1
+                        #     return "Error"
+                        # output_data['SEX'] = df['Gender (Life 1)'].apply(map_gender)
+
+
                         def map_gender(gender):
-                            gender = str(gender).strip().lower()
+                            if pd.isna(gender) or str(gender).strip() == "":  # Check for None, NaN, or empty string
+                                return "Error"
+                            
+                            gender = str(gender).strip().lower()  # Convert to lowercase string
+                            
                             if gender in ["male", "m"]:
-                                return 0
+                                return 0  # Convert male to 0
                             elif gender in ["female", "f"]:
-                                return 1
-                            return "Error"
+                                return 1  # Convert female to 1
+                            
+                            return "Error"  # Return "Error" for unexpected values
+
+
                         output_data['SEX'] = df['Gender (Life 1)'].apply(map_gender)
 
 
+
+
                         # 9. BIRTH_DAT2 (Formatted as 8-digit YYYYMMDD as Integer from DOB (Life 2))
-                        output_data['BIRTH_DAT2'] = df['DOB (Life 2)'].apply(convert_date_to_8_digits)
+
+                        def convert_date_to_8_digits2(date):
+                            try:
+                                date_obj = pd.to_datetime(date, errors='coerce')
+                                return int(f"{date_obj.year:04d}{date_obj.month:02d}{date_obj.day:02d}")
+                            except:
+                                return 0
+                            
+
+                        output_data['BIRTH_DAT2'] = df['DOB (Life 2)'].apply(convert_date_to_8_digits2)
                         
                         # 10. SEX2 (Mapped from Gender (Life 2))
                         output_data['SEX2'] = df['Gender (Life 2)'].apply(map_gender)
 
                         # 11. POL_TERM_Y (Policy Term in Years)
-                        output_data['POL_TERM_Y'] = df['Policy Term (Months)'].apply(lambda x: int(x) / 12 if str(x).isdigit() else 0)
-                        
+                        #output_data['POL_TERM_Y'] = df['Policy Term (Months)'].apply(lambda x: int(x) / 12 if str(x).isdigit() else 0)
+
+                        # 11. POL_TERM_Y (Policy Term in Years)
+                        def convert_policy_term(months):
+                            if pd.isna(months) or str(months).strip() == "" or str(months).strip() == "0" or float(months) < 0 or months == 0:
+                                return "Error"  # Return "Error" for empty, blank, 0, or negative values
+                            
+                            try:
+                                months = float(months)  # Convert to number
+                                return months / 12  # Convert to years
+                            except:
+                                return "Error"  # Return "Error" if conversion fails
+
+                        # Apply function to Policy Term (Months) column
+                        output_data['POL_TERM_Y'] = df['Policy Term (Months)'].apply(convert_policy_term)
+
+
                         # 12. PREM_FREQ (Static Value)
                         output_data['PREM_FREQ'] = 0
 
@@ -371,13 +434,24 @@ if uploaded_file:
 
 
                         # 14. SINGLE_PREM (Extracted from Single Premium as Number)
+
                         def convert_to_number(value):
                             try:
                                 return float(value) if str(value).replace(".", "", 1).isdigit() else 0
                             except:
                                 return 0
-                        output_data['SINGLE_PREM'] = df['Single Premium'].apply(convert_to_number)
-                        
+                            
+
+                        def calculate_single_prem(row):
+                            single_premium = convert_to_number(row['Single Premium'])  # First convert to number format
+                            if row['Currency'] == 'USD':
+                                return single_premium * 450  # Multiply by 450 if currency is USD
+                            elif row['Currency'] == 'LKR':
+                                return single_premium  # Keep the original value for LKR
+                            else:
+                                return 0  # Default value for unexpected currency types
+
+                        output_data['SINGLE_PREM'] = df.apply(calculate_single_prem, axis=1)
 
                         # 15. SUM_ASSURED
                         output_data['SUM_ASSURED'] = 0
@@ -386,7 +460,18 @@ if uploaded_file:
                         output_data['INIT_DECB_IF'] = 0
 
                         # 17. LOAN_AMT_1
-                        output_data['LOAN_AMT_1'] = df['Loan Amount (Death Benefit) -Life 1'].apply(convert_to_number)
+                        # Convert 'Loan Amount (Death Benefit) -Life 1' to numeric
+                        df['Loan Amount (Death Benefit) -Life 1'] = df['Loan Amount (Death Benefit) -Life 1'].apply(convert_to_number)
+
+                        def calculate_loan_amt_1(row):
+                            if row['Currency'] == 'USD':
+                                return row['Loan Amount (Death Benefit) -Life 1'] * 450
+                            elif row['Currency'] == 'LKR':
+                                return row['Loan Amount (Death Benefit) -Life 1']
+                            else:
+                                return "Error"  # Default value for unexpected currency types
+
+                        output_data['LOAN_AMT_1'] = df.apply(calculate_loan_amt_1, axis=1)
 
                         # 18. LOAN_AMT_2
                         output_data['LOAN_AMT_2'] = 0
@@ -418,28 +503,63 @@ if uploaded_file:
                         output_data['LOAN_INT_3'] = 0
 
                         # 23. TPD_DECLINE Calculation
+
+                        # def calculate_tpd_decline(value):
+                        #     value = str(value).strip().lower()
+                        #     if value == "yes":
+                        #         return "N"
+                        #     elif value == "no":
+                        #         return "Y"
+                        #     else:
+                        #         return "Error"
+                        
+                        #output_data['TPD_DECLINE'] = df['TPD Option  - Life 1'].apply(calculate_tpd_decline)
+
                         def calculate_tpd_decline(value):
-                            value = str(value).strip().lower()
+                            if pd.isna(value) or str(value).strip() == "" or str(value).strip() == "0":  # Check for None, NaN, empty string, or "0"
+                                return "Error"
+                            
+                            value = str(value).strip().lower()  # Convert to lowercase string
+                            
                             if value == "yes":
                                 return "N"
                             elif value == "no":
                                 return "Y"
-                            else:
-                                return "Error"
-                        
+                            
+                            return "Error"  # Return "Error" for unexpected values
+
+                        # Apply function to TPD Option - Life 1 column
                         output_data['TPD_DECLINE'] = df['TPD Option  - Life 1'].apply(calculate_tpd_decline)
 
+
                         # 24. TPD_DECLINE2 Calculation
+                        # def calculate_tpd_decline2(value):
+                        #     value = str(value).strip().lower()
+                        #     if value == "yes":
+                        #         return "N"
+                        #     elif value == "no":
+                        #         return "Y"
+                        #     else:
+                        #         return 0
+                            
+
                         def calculate_tpd_decline2(value):
-                            value = str(value).strip().lower()
+                            if pd.isna(value) or str(value).strip() == "" or str(value).strip() == "0":  # Check for None, NaN, empty string, or "0"
+                                return 0
+                            
+                            value = str(value).strip().lower()  # Convert to lowercase string
+                            
                             if value == "yes":
                                 return "N"
                             elif value == "no":
                                 return "Y"
-                            else:
-                                return 0
-                        
+                            
+                            return 0  # Return 0 for unexpected values
+
+                        # Apply function to TPD Option - Life 2 column
                         output_data['TPD_DECLINE2'] = df['TPD Option  - Life 2'].apply(calculate_tpd_decline2)
+                        
+
                         
                         # 25. MAT_BEN_PP
                         output_data['MAT_BEN_PP'] = 0
@@ -509,11 +629,7 @@ if uploaded_file:
                         # 43. CHANNEL_CODE
                         output_data['CHANNEL_CODE'] = "Partnership"
 
-                        # Ensure SPCODE remains 1 and properly formatted as integer
-                        #output_data['SPCODE'] = output_data['SPCODE'].astype(int)
 
-                        # Debugging Output (Optional - You can remove this after verification)
-                        #st.write("SPCODE Column Unique Values:", output_data['SPCODE'].unique())
 
                         return output_data
             
