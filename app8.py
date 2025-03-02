@@ -141,7 +141,8 @@ if uploaded_file:
         else:
             try:
                 # Rename columns based on the chosen header row
-                input_df.columns = input_df.iloc[0]
+                input_df.columns = input_df.iloc[0].fillna("Unnamed_Column").tolist()  # Convert Series to list
+                #input_df.columns = input_df.iloc[0]
                 input_df = input_df[1:].reset_index(drop=True)
                 
                 # Display processed file    
