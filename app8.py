@@ -11,12 +11,13 @@ st.set_page_config(page_title="VALUATION AUTOMATION", layout="wide")
 
 
 # Display the logo
-image_path = "IMAGE/hnblogo.jpg"
-
+image_path = "IMAGE/hnblogo.jpg"  
 if os.path.exists(image_path):
-    st.image(image_path, width=50, use_container_width=True)  # Fixed path & parameter
-else:
-    st.warning("Logo image not found. Please check the file path.")
+    image = Image.open(image_path)
+    st.image(image,  width=50,use_column_width="auto")
+
+#st.image("./image/hnblogo.jpg", width=50, use_column_width="auto")
+
 
 
 # Apply custom CSS for styling
@@ -70,7 +71,6 @@ st.subheader("Step 1: Choose Valuation Date")
 valuation_date = st.date_input("Select Valuation Date:")
 st.markdown("</div>", unsafe_allow_html=True)
 
-
 # Load RI_Company Table (Preloaded from TABLE folder)
 ri_company_path = "TABLE/RI_Company.csv"
 try:
@@ -91,7 +91,7 @@ except Exception as e:
     mrp_loan_type_dict = {}
 
 
-# Step 2: File Upload Section
+# File Upload Section
 st.markdown("<div class='frame'>", unsafe_allow_html=True)
 st.subheader("Step 2: Upload Your File (Excel or CSV)")
 uploaded_file = st.file_uploader("Upload a file (File should be Excel or CSV formet)", type=["csv", "xlsx"], key="file_uploader")
@@ -108,9 +108,7 @@ if uploaded_file:
         st.subheader("Uploaded File Preview:")
         st.dataframe(preview_df)
         st.markdown("</div>", unsafe_allow_html=True)
-
-
-
+        
         # Header Row Selection
         st.markdown("<div class='frame'>", unsafe_allow_html=True)
         st.subheader("Step 3: Select Header Row")
@@ -119,28 +117,19 @@ if uploaded_file:
         
         # Read file again with the chosen header row
         uploaded_file.seek(0)  # Reset file pointer
-        if uploaded_file.name.endswith(".csv"):
-            input_df = pd.read_csv(uploaded_file, header=header_row)
-        else:
-            input_df = pd.read_excel(uploaded_file, header=header_row)
+        input_df = pd.read_csv(uploaded_file, skiprows=header_row) if uploaded_file.name.endswith(".csv") else pd.read_excel(uploaded_file, skiprows=header_row)
         
         if input_df.empty or len(input_df.columns) == 0:
-            st.error("Error: No valid columns detected after using the selected header row. Please choose a different row.")
+            st.error("Error: No valid columns detected after skipping the selected header row. Please choose a different row.")
         else:
             try:
+                # Rename columns based on the chosen header row
+                input_df.columns = input_df.iloc[0]
+                input_df = input_df[1:].reset_index(drop=True)
+                
                 # Display processed file
                 st.subheader("Processed File:")
                 st.dataframe(input_df)
-            except Exception as e:
-                st.error(f"An error occurred while processing the file: {e}")
-        
-
-
-
-
-
-
-        
                 
                 # Step 4: Ignore Group Data
                 st.subheader("Step 4: Ignore Group Life MCR Policies")
