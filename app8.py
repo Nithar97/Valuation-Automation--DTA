@@ -91,6 +91,13 @@ except Exception as e:
     mrp_loan_type_dict = {}
 
 
+# Function to clean NaN values before displaying data
+def clean_dataframe(df):
+    """Replaces NaN and None with safe values for JSON and Streamlit."""
+    df = df.replace({np.nan: "Missing", None: "Missing"})  # Replace NaN/None
+    df = df.astype(str)  # Convert all columns to string
+    return df
+
 # Step 2: File Upload Section
 st.markdown("<div class='frame'>", unsafe_allow_html=True)
 st.subheader("Step 2: Upload Your File (Excel or CSV)")
@@ -103,8 +110,9 @@ if uploaded_file:
         # Read file without headers to preview data
         preview_df = pd.read_csv(uploaded_file, header=None, dtype=str, nrows=10) if uploaded_file.name.endswith(".csv") else pd.read_excel(uploaded_file, header=None, dtype=str, nrows=10)
         
-        # Display preview for user reference
-        preview_df = preview_df.fillna("")          # Fill NaN values before displaying
+        # Display preview for user reference        
+        preview_df = clean_dataframe(preview_df)    # ✅ FIX: Ensure NaN values do not break Streamlit
+        #preview_df = preview_df.fillna("")          # Fill NaN values before displaying
         st.markdown("<div class='frame'>", unsafe_allow_html=True)        
         st.subheader("Uploaded File Preview:")
         st.dataframe(preview_df)
@@ -128,8 +136,9 @@ if uploaded_file:
                 input_df.columns = input_df.iloc[0]
                 input_df = input_df[1:].reset_index(drop=True)
                 
-                # Display processed file
-                input_df = input_df.fillna("")    # **Fix: Fill NaN values before displaying**
+                # Display processed file    
+                input_df = clean_dataframe(input_df)     # ✅ FIX: Ensure JSON-safe values before displaying
+                #input_df = input_df.fillna("")    # **Fix: Fill NaN values before displaying**
                 st.subheader("Processed File:")
                 st.dataframe(input_df)
                 
