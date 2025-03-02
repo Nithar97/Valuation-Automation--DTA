@@ -65,7 +65,7 @@ if os.path.exists(image_path):
     st.image(image, use_column_width=True)
 
 
-# Valuation Date Input
+# Step 1 : Valuation Date Input
 st.markdown("<div class='frame'>", unsafe_allow_html=True)
 st.subheader("Step 1: Choose Valuation Date")
 valuation_date = st.date_input("Select Valuation Date:")
@@ -91,7 +91,7 @@ except Exception as e:
     mrp_loan_type_dict = {}
 
 
-# File Upload Section
+# Step 2: File Upload Section
 st.markdown("<div class='frame'>", unsafe_allow_html=True)
 st.subheader("Step 2: Upload Your File (Excel or CSV)")
 uploaded_file = st.file_uploader("Upload a file (File should be Excel or CSV formet)", type=["csv", "xlsx"], key="file_uploader")
@@ -104,12 +104,13 @@ if uploaded_file:
         preview_df = pd.read_csv(uploaded_file, header=None, dtype=str, nrows=10) if uploaded_file.name.endswith(".csv") else pd.read_excel(uploaded_file, header=None, dtype=str, nrows=10)
         
         # Display preview for user reference
+        preview_df = preview_df.fillna("")          # Fill NaN values before displaying
         st.markdown("<div class='frame'>", unsafe_allow_html=True)        
         st.subheader("Uploaded File Preview:")
         st.dataframe(preview_df)
         st.markdown("</div>", unsafe_allow_html=True)
         
-        # Header Row Selection
+        # Step 3: Header Row Selection
         st.markdown("<div class='frame'>", unsafe_allow_html=True)
         st.subheader("Step 3: Select Header Row")
         header_row = st.number_input("Header Row:", min_value=0, max_value=len(preview_df)-1, value=4, step=1)
@@ -128,6 +129,7 @@ if uploaded_file:
                 input_df = input_df[1:].reset_index(drop=True)
                 
                 # Display processed file
+                input_df = input_df.fillna("")    # **Fix: Fill NaN values before displaying**
                 st.subheader("Processed File:")
                 st.dataframe(input_df)
                 
