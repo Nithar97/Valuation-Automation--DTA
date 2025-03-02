@@ -91,16 +91,20 @@ except Exception as e:
     mrp_loan_type_dict = {}
 
 
-# Function to clean DataFrame and replace NaN values safely
+# ✅ Function to clean DataFrame and replace NaN values safely
 def clean_dataframe(df):
-    """Replace NaN/None values and ensure all columns are JSON-safe."""
-    df = df.replace({np.nan: "Missing", None: "Missing"})  # Replace NaN/None
+    """Ensure all columns and values are JSON-safe."""
+    df.columns = df.columns.astype(str).fillna("Missing_Column")  # Fix NaN in column names
+    df = df.replace({np.nan: "Missing", None: "Missing"})  # Fix NaN in data
     for col in df.columns:
         if df[col].dtype == "float64" or df[col].dtype == "int64":
             df[col] = df[col].fillna(0)  # Replace NaN in numeric columns with 0
         else:
-            df[col] = df[col].astype(str)  # Convert all other types to string
+            df[col] = df[col].astype(str)  # Convert all columns to string
     return df
+
+
+
 
 # Step 2: File Upload Section
 st.markdown("<div class='frame'>", unsafe_allow_html=True)
